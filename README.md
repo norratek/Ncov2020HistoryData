@@ -6,3 +6,6 @@
 http://ncov.nosensor.com:8080/api/<br>
 http://ncov.nosensor.com:8080/api/city=武汉<br>
 http://ncov.nosensor.com:8080/api/province=湖北<br>
+
+目前做了一个简单的应用：<br>
+http://ncov.nosensor.com
