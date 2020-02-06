@@ -352,19 +352,19 @@
         "CityLinks": [
             {
                 "City": "南京",
-                "HttpLink": "http://wjw.nanjing.gov.ex2.wjw.ipv6.jiangsu.gov.cn/"
+                "HttpLink": "http://wjw.nanjing.gov.cn/"
             },
             {
                 "City": "无锡",
-                "HttpLink": "http://wjw.wuxi.gov.ex2.wjw.ipv6.jiangsu.gov.cn/"
+                "HttpLink": "http://wjw.wuxi.gov.cn/"
             },
             {
                 "City": "徐州",
-                "HttpLink": "http://ws.xz.gov.ex2.wjw.ipv6.jiangsu.gov.cn"
+                "HttpLink": "http://ws.xz.gov.cn/"
             },
             {
                 "City": "常州",
-                "HttpLink": "http://wjw.changzhou.gov.ex2.wjw.ipv6.jiangsu.gov.cn"
+                "HttpLink": "http://wjw.changzhou.gov.cn/"
             },
             {
                 "City": "苏州",
