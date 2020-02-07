@@ -368,39 +368,39 @@
             },
             {
                 "City": "苏州",
-                "HttpLink": "http://www.szswjw.gov.ex2.wjw.ipv6.jiangsu.gov.cn"
+                "HttpLink": "http://wsjkw.suzhou.gov.cn/"
             },
             {
                 "City": "南通",
-                "HttpLink": "http://wjw.nantong.gov.ex2.wjw.ipv6.jiangsu.gov.cn/"
+                "HttpLink": "http://wjw.nantong.gov.cn/"
             },
             {
                 "City": "连云港",
-                "HttpLink": "http://wjw.lyg.gov.ex2.wjw.ipv6.jiangsu.gov.cn"
+                "HttpLink": "http://wjw.lyg.gov.cn"
             },
             {
                 "City": "淮安",
-                "HttpLink": "http://wsj.huaian.gov.ex2.wjw.ipv6.jiangsu.gov.cn"
+                "HttpLink": "http://wsj.huaian.gov.cn"
             },
             {
                 "City": "盐城",
-                "HttpLink": "http://wsj.yancheng.gov.ex2.wjw.ipv6.jiangsu.gov.cn/"
+                "HttpLink": "http://wsj.yancheng.gov.cn/"
             },
             {
                 "City": "扬州",
-                "HttpLink": "http://wjw.yangzhou.gov.ex2.wjw.ipv6.jiangsu.gov.cn"
+                "HttpLink": "http://wjw.yangzhou.gov.cn"
             },
             {
                 "City": "镇江",
-                "HttpLink": "http://wjw.zhenjiang.gov.ex2.wjw.ipv6.jiangsu.gov.cn"
+                "HttpLink": "http://wjw.zhenjiang.gov.cn"
             },
             {
                 "City": "泰州",
-                "HttpLink": "http://wjw.taizhou.gov.ex2.wjw.ipv6.jiangsu.gov.cn/"
+                "HttpLink": "http://wjw.taizhou.gov.cn/"
             },
             {
                 "City": "宿迁",
-                "HttpLink": "http://wsj.suqian.gov.ex2.wjw.ipv6.jiangsu.gov.cn"
+                "HttpLink": "http://wsj.suqian.gov.cn"
             }
         ]
     },
