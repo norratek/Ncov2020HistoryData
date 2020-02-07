@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+        body,
+        html,
+        .allmap {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            margin: 0;
+            font-family: "微软雅黑";
+        }
+        .chartCityNum {
+            width: 10%;
+            height: 10%;
+            overflow: hidden;
+            margin: 0;
+            font-family: "微软雅黑";
+        }
+    </style>
+    <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=N3TZQuZv2UfE5A0SRGWa3gPz2LZW6oSv"></script>
+    <script type="text/javascript" src="//api.map.baidu.com/library/Heatmap/2.0/src/Heatmap_min.js"></script>
+    <script src="./echarts.min.js"></script>
+    <title>新型冠状病毒疫情省市地图</title>
+</head>
+
+<body>
+    <div id="allmap" class="allmap"></div>
+</body>
+
+</html>
+<script type="text/javascript">
+    // 百度地图API功能
+    var map = new BMap.Map("allmap");
+    var dayTime
+    map.enableScrollWheelZoom();
+    map.setMapStyle({
+        style: "grayscale"
+    });
+    map.centerAndZoom(new BMap.Point(114.311828, 30.598434), 5);
+    findTrip();
+
+    function getCenterPoint(path)
+    {
+        var x = 0.0;
+        var y = 0.0;
+        for(var i=0;i<path.length;i++){
+            x=x+ parseFloat(path[i].lng);
+            y=y+ parseFloat(path[i].lat);
+        }
+        x=x/path.length;
+        y=y/path.length;
+        return new BMap.Point(x,y);
+    }
+
+    function getBoundary(cityName) {
+        var bdary = new BMap.Boundary();
+        bdary.get(cityName, function(rs) { //获取行政区域
+            var count = rs.boundaries.length; //行政区域的点有多少个
+            if (count === 0) {
+                //alert('未能获取当前输入行政区域');
+				cityIndex++
+                return;
+            }
+            var pointArray = [];
+            for (var i = 0; i < count; i++) {
+                var ply = new BMap.Polygon(rs.boundaries[i], {
+                    strokeWeight: 2,
+                    strokeColor: "#ff0000",
+                    fillColor: "#ff0000",
+					strokeOpacity: ncovNumber[cityIndex]/2000+0.1>1?1:ncovNumber[cityIndex]/2000+0.1,
+					fillOpacity:ncovNumber[cityIndex]/2000+0.1>1?1:ncovNumber[cityIndex]/2000+0.1
+                }); //建立多边形覆盖物
+                map.addOverlay(ply); //添加覆盖物
+                pointArray = pointArray.concat(ply.getPath());
+            }
+            //map.setViewport(pointArray); //调整视野
+            var point = getCenterPoint(pointArray)
+            var labelNum=new BMap.Label(provice[cityIndex].toString()+ncovNumber[cityIndex].toString(), {offset:new BMap.Size(0,0), position:point});
+            labelNum.addEventListener("click", function(){          
+                        var province = labelNum.content
+                        province = province.substring(0, findNumber(province))
+                        addProvinceDiv(province)
+                    });
+            
+            var labelTime=new BMap.Label(dayTime, {offset:new BMap.Size(0,0)});
+            map.addOverlay(labelNum); //添加覆盖物
+            map.addOverlay(labelTime); //添加覆盖物
+			cityIndex++
+        });
+    }
+
+    function isSupportCanvas(){
+        var elem = document.createElement('canvas');
+        return !!(elem.getContext && elem.getContext('2d'));
+    }
+
+    function setGradient(){
+     	/*格式如下所示:
+		{
+	  		0:'rgb(102, 255, 0)',
+	 	 	.5:'rgb(255, 170, 0)',
+		  	1:'rgb(255, 0, 0)'
+		}*/
+     	var gradient = {0:'rgb(255, 255, 0)'};
+     	var colors = document.querySelectorAll("input[type='color']");
+     	colors = [].slice.call(colors,0);
+     	colors.forEach(function(ele){
+			gradient[ele.getAttribute("data-key")] = ele.value; 
+     	});
+        heatmapOverlay.setOptions({"gradient":gradient});
+    }
+
+    var cityPoints = []
+    var cityCount
+    var heatmapOverlay
+
+    function findCityIndex(cityName) {
+        for(var i = 0; i < city.length; i++)
+        {
+            if(cityName == city[i])
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    function findNumber(cityName) {
+        for(var i = 0; i < cityName.length; i++)
+        {
+            if(cityName[i]>='0' && cityName[i]<='9')
+            {
+                return i;
+            }
+        }
+        return cityName.length;
+    }
+
+
+    function getBoundaryCity(cityName) {
+        if(cityName == "其他区")
+        {
+            cityCount++
+            return
+        }
+        var xhr = new XMLHttpRequest();
+        xhr.open("Get", "http://ncov.nosensor.com:8080/api/loc="+cityName, true);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4) {
+                if (xhr.status == 200) {
+                    jsoncontent = JSON.parse(xhr.responseText);
+                    cityCount++
+                    if(jsoncontent.status != "0") {
+                        return
+                    }
+                    myCityIndex = findCityIndex(jsoncontent.loc)
+                    cityPoints.push({"lng":jsoncontent.lng,"lat":jsoncontent.lat, "count":cityNcovNum[myCityIndex]})
+                    var labelCity=new BMap.Label(jsoncontent.loc+cityNcovNum[myCityIndex], {offset:new BMap.Size(0,0), position:new BMap.Point(jsoncontent.lng,jsoncontent.lat)});
+                    labelCity.addEventListener("click", function(){          
+                        var cityName = labelCity.content
+                        cityName = cityName.substring(0, findNumber(cityName))
+                        addDiv(cityName)
+                    });
+                    labelCity.setStyle({zIndex:1});
+                    map.addOverlay(labelCity); //添加覆盖物
+                    if(cityCount == city.length) {
+                        if(!isSupportCanvas()){
+                            alert('热力图目前只支持有canvas支持的浏览器,您所使用的浏览器不能使用热力图功能~')
+                        }
+                        heatmapOverlay = new BMapLib.HeatmapOverlay({"radius":5});
+                        map.addOverlay(heatmapOverlay);
+                        heatmapOverlay.setDataSet({data:cityPoints,max:1});
+                        setGradient();
+                        heatmapOverlay.show();
+                    }
+                }
+            }
+	    }
+        xhr.send();
+    }
+
+    var xhr = new XMLHttpRequest();
+    var provice, provice_uncertain, ncovNumber, ncovNumber_uncertain, city, cityNcovNum, jsoncontent
+    var cityIndex_pre=-1, cityIndex = 0, provinceIndex;
+
+	xhr.open("Post", "http://ncov.nosensor.com:8080/api", true);
+	xhr.setRequestHeader("Access-Control-Allow-Origin", "*");
+	xhr.setRequestHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE");
+	xhr.setRequestHeader("Content-type", "application/json");
+	xhr.setRequestHeader("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization");
+	xhr.onreadystatechange = function () {
+		if (xhr.readyState == 4) {
+			if (xhr.status == 200) {
+				jsoncontent = JSON.parse(xhr.responseText);
+                //provinceIndex = jsoncontent.province.length-1
+                provinceIndex = 0
+                if(jsoncontent.city[0].City != null) {
+                    city = jsoncontent.city[0].City
+                    cityNcovNum = jsoncontent.city[0].NcovNum
+                }
+                else {
+                    city = jsoncontent.city[1].City
+                    cityNcovNum = jsoncontent.city[1].NcovNum
+                    provinceIndex = 1
+                }
+                dayTime = jsoncontent.province[provinceIndex].Time
+                provice = jsoncontent.province[provinceIndex].Province
+                ncovNumber = jsoncontent.province[provinceIndex].NcovNum
+                //provice_uncertain = jsoncontent.uncertain[0].Province
+                //ncovNumber_uncertain = jsoncontent.uncertain[0].NcovNum
+
+                var timer = setInterval(function() {
+                    if (cityIndex_pre != cityIndex) {
+                        if (cityIndex == provice.length) {
+                            provinceIndex--
+                            if(provinceIndex < 0 || jsoncontent.province[provinceIndex].Province == null) {
+                                cityIndex_pre = cityIndex
+                                clearInterval(timer)
+                                /*for(cityIndex=0; cityIndex < provice_uncertain.length; cityIndex++)
+                                {
+                                    getBoundaryUncertain(provice_uncertain[cityIndex])
+                                }*/
+                                cityCount = 0;
+                                for(cityIndex=0; cityIndex < city.length; cityIndex++)
+                                {
+                                    getBoundaryCity(city[cityIndex])
+                                }
+                                //addDiv();
+                            } else {
+                                dayTime = jsoncontent.province[provinceIndex].Time
+                                provice = jsoncontent.province[provinceIndex].Province
+                                ncovNumber = jsoncontent.province[provinceIndex].NcovNum
+                                cityIndex_pre=-1
+                                cityIndex = 0
+                                map.clearOverlays();
+                            }
+                        } else {
+                            cityIndex_pre = cityIndex
+                            getBoundary(provice[cityIndex])
+                        }
+                    }
+                }, 50)
+			}
+		}
+	}
+    xhr.send();
+    addDiv("武汉");
+    addProvinceDiv("湖北")
+
+    function addDiv(cityName) {
+        var xhrCityBar = new XMLHttpRequest();
+        xhrCityBar.open("Post", "http://ncov.nosensor.com:8080/api/city="+cityName, true);
+        xhrCityBar.setRequestHeader("Access-Control-Allow-Origin", "*");
+        xhrCityBar.setRequestHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE");
+        xhrCityBar.setRequestHeader("Content-type", "application/json");
+        xhrCityBar.setRequestHeader("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization");
+        xhrCityBar.onreadystatechange = function () {
+            if (xhrCityBar.readyState == 4) {
+                if (xhrCityBar.status == 200) {
+                    var jsoncontent = JSON.parse(xhrCityBar.responseText);
+
+                    var dateArray = []
+                    var NumberArray = []
+                    var cityNameOption = jsoncontent.msg.City
+                    for(var i=jsoncontent.city.length-1; i >= 0; i--) {
+                        dateArray.push(jsoncontent.city[i].Date.substring(5,10))
+                        NumberArray.push(jsoncontent.city[i].Confirmed)
+                    }
+
+                    var divId = 1;
+                    // 自定义覆盖物,point为添加覆盖物的点位置
+                    function ComplexCustomOverlay(point){
+                        this._point = point;
+                    }
+                    
+                    ComplexCustomOverlay.prototype = new BMap.Overlay();
+            
+                    ComplexCustomOverlay.prototype.initialize = function(map){
+                        this._map = map;
+                        //生成div
+                        var div = this._div = document.createElement("div");
+                        //赋id
+                        div.id = 'div'+divId;
+                        //divId++;
+                        //div.style.backgroundColor = "#fff";
+                        //div.style.border = "1px solid #BC3B3A";
+                        div.style.zIndex = BMap.Overlay.getZIndex(this._point.lat);
+                        div.style.width = "100px";
+                        div.style.height = "100px";
+                        //这里必须是绝对定位，不然会影响经纬度定位，然中偏离原来位置
+                        div.style.position='fixed';
+                        div.style.top = "1em";
+                        div.style.right = "1em";
+            
+            
+                        //将该覆盖物添加到标签覆盖物列表
+                        map.getPanes().labelPane.appendChild(div);
+                        //echarts图表配置，下面只是一个示例，可以配置各种图表
+                        var echarts2=echarts.init(document.getElementById(div.id))
+                        option = {
+                            title:{
+                                text: cityNameOption
+                            },
+                            xAxis: {
+                                type: 'category',
+                                data: dateArray,
+                            },
+                            yAxis: {
+                                type: 'value'
+                            },
+                            series: [{
+                                data: NumberArray,
+                                type: 'bar',
+                                color: 'green'
+                            }]
+                        };
+                        echarts2.setOption(option)
+                        var divText=this._divText=document.createElement("div");
+                        divText.className = "divText";
+                        div.appendChild(divText)
+                        return div;
+                    }
+                    /*ComplexCustomOverlay.prototype.draw = function(){
+                        var map = this._map;
+                        //饼图的位置设置,需要获取该地图点的像素位置x,y
+                        var pixel = map.pointToOverlayPixel(this._point);
+                        this._div.style.right = "1em";
+                        this._div.style.top  = "1em";
+                    }*/
+
+                    var myCompOverlay = new ComplexCustomOverlay(new BMap.Point(0,0));
+                    map.addOverlay(myCompOverlay);
+                }
+            }
+        }
+        xhrCityBar.send()
+    }
+        function addProvinceDiv(provinceName) {
+        var xhrCityBar = new XMLHttpRequest();
+        xhrCityBar.open("Post", "http://ncov.nosensor.com:8080/api/province="+provinceName, true);
+        xhrCityBar.setRequestHeader("Access-Control-Allow-Origin", "*");
+        xhrCityBar.setRequestHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE");
+        xhrCityBar.setRequestHeader("Content-type", "application/json");
+        xhrCityBar.setRequestHeader("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization");
+        xhrCityBar.onreadystatechange = function () {
+            if (xhrCityBar.readyState == 4) {
+                if (xhrCityBar.status == 200) {
+                    var jsoncontent = JSON.parse(xhrCityBar.responseText);
+
+                    var dateArray = []
+                    var NumberArray = []
+                    var provinceName = jsoncontent.msg.Province
+                    for(var i=jsoncontent.province.length-1; i >= 0; i--) {
+                        dateArray.push(jsoncontent.province[i].Date.substring(5,10))
+                        NumberArray.push(jsoncontent.province[i].Confirmed)
+                    }
+
+                    var divId = 1;
+                    // 自定义覆盖物,point为添加覆盖物的点位置
+                    function ComplexCustomOverlay(point){
+                        this._point = point;
+                    }
+                    
+                    ComplexCustomOverlay.prototype = new BMap.Overlay();
+            
+                    ComplexCustomOverlay.prototype.initialize = function(map){
+                        this._map = map;
+                        //生成div
+                        var div = this._div = document.createElement("div");
+                        //赋id
+                        div.id = 'div'+divId;
+                        //divId++;
+                        //div.style.backgroundColor = "#fff";
+                        //div.style.border = "1px solid #BC3B3A";
+                        div.style.zIndex = BMap.Overlay.getZIndex(this._point.lat);
+                        div.style.width = "200px";
+                        div.style.height = "200px";
+                        //这里必须是绝对定位，不然会影响经纬度定位，然中偏离原来位置
+                        div.style.position='fixed';
+                        div.style.top = "1em";
+                        div.style.right = "1em";
+            
+            
+                        //将该覆盖物添加到标签覆盖物列表
+                        map.getPanes().labelPane.appendChild(div);
+                        //echarts图表配置，下面只是一个示例，可以配置各种图表
+                        var echarts2=echarts.init(document.getElementById(div.id))
+                        option = {
+                            title:{
+                                text: provinceName
+                            },
+                            xAxis: {
+                                type: 'category',
+                                data: dateArray,
+                            },
+                            yAxis: {
+                                type: 'value'
+                            },
+                            series: [{
+                                data: NumberArray,
+                                type: 'bar',
+                                color: 'green'
+                            }]
+                        };
+                        echarts2.setOption(option)
+                        var divText=this._divText=document.createElement("div");
+                        divText.className = "divText";
+                        div.appendChild(divText)
+                        return div;
+                    }
+                    /*ComplexCustomOverlay.prototype.draw = function(){
+                        var map = this._map;
+                        //饼图的位置设置,需要获取该地图点的像素位置x,y
+                        var pixel = map.pointToOverlayPixel(this._point);
+                        this._div.style.right = "1em";
+                        this._div.style.top  = "1em";
+                    }*/
+
+                    var myCompOverlay = new ComplexCustomOverlay(new BMap.Point(0,0));
+                    map.addOverlay(myCompOverlay);
+                }
+            }
+        }
+        xhrCityBar.send()
+    }
+
+
+
+    var tripCity, tripCityIndex, tripJsoncontent, tripLen
+    var tripPoints = []
+    var tripDetail = ""
+    var cityNameArray = []
+
+    function findNumberOfOneCity(cityName)
+    {
+        var num = 0
+        for(var i = 0; i < cityNameArray.length; i++) {
+            if(cityNameArray[i] == cityName) {
+                num++
+            }
+        }
+        return num+1
+    }
+
+    function findTripPos(cityName) {
+        var xhrCity = new XMLHttpRequest();
+        if("汉口" == cityName) {
+            cityName = "武汉"
+        }
+        cityNameArray.push(cityName)
+        xhrCity.open("Get", "http://ncov.nosensor.com:8080/api/loc="+cityName, true);
+        xhrCity.onreadystatechange = function () {
+            if (xhrCity.readyState == 4) {
+                if (xhrCity.status == 200) {
+                    tripPosjsoncontent = JSON.parse(xhrCity.responseText);
+                    tripCityIndex++
+                    if(tripPosjsoncontent.status != "0") {
+                        tripCityIndex = 0
+                        tripDetail = ""
+                        tripPoints = []
+                        return
+                    }
+                    num = findNumberOfOneCity(tripPosjsoncontent.loc)
+                    var labelCity=new BMap.Label(tripPosjsoncontent.loc+"\r\n"+tripDetail, {offset:new BMap.Size(0,0), position:new BMap.Point(tripPosjsoncontent.lng+num*0.01,tripPosjsoncontent.lat+num*0.01)});
+                    labelCity.addEventListener("click", function(){          
+                        var l = labelCity.content
+                        strIndex = labelCity.content.indexOf("<br>点击返回")
+                        if(strIndex >= 0) {
+                            labelCity.content = labelCity.content.substring(0, strIndex)
+                            labelCity.setStyle({zIndex:0});
+                        }
+                        else {
+                            labelCity.setStyle({zIndex:10000000});
+                            labelCity.content += "<br>点击返回"
+                        }
+                    });
+                    labelCity.setStyle({zIndex:1});
+                    //map.addOverlay(labelCity); //添加覆盖物
+                    tripPoints.push(new BMap.Point(tripPosjsoncontent.lng,tripPosjsoncontent.lat))
+                    if(tripCityIndex == 2)
+                    {
+                        var curve = new BMap.Polyline(tripPoints, {strokeColor:"#00b3ff",strokeWeight:2, strokeOpacity:1}); //创建直线对象
+                        map.addOverlay(curve);
+                        tripCityIndex = 0
+                        tripDetail = ""
+                        tripPoints = []
+                    }
+                }
+            }
+        }
+        xhrCity.send()
+    }
+
+    function findTrip() {
+        var url = "https://2019ncov.nosugartech.com/data.json?"+Math.floor(new Date().getTime()/1000/3600);
+        if(location.href.indexOf("127.0.0.1")>-1 || location.href.indexOf("2019ncov2")>-1){
+            url="https://ncov2019.oss-cn-beijing.aliyuncs.com/cache"; //debug
+        }
+        var xhrTrip = new XMLHttpRequest();
+        xhrTrip.open("Get", url, true);
+        xhrTrip.onreadystatechange = function () {
+            if (xhrTrip.readyState == 4) {
+                if (xhrTrip.status == 200) {
+                    tripJsoncontent = JSON.parse(xhrTrip.responseText);
+                    tripLen = tripJsoncontent.data.length
+                    tripIndex = 0
+                    
+                    var timerTrip = setInterval(function() {
+                            if("" != tripDetail) {
+                                return
+                            }
+                            if(tripIndex == tripLen-1)
+                            {
+                                clearInterval(timerTrip)
+                            }
+                            
+                            var oneTrip = tripJsoncontent.data[tripIndex]
+                            var start, end, detail
+
+                            if(oneTrip.t_type == 1 || oneTrip.t_type == 2)
+                            {
+                                start = oneTrip.t_pos_start
+                                end = oneTrip.t_pos_end
+                                tripDetail = "<br>"+oneTrip.t_date+"<br>"+oneTrip.t_no+"<br>从 "+start+" 至 "+end+"<br>"+oneTrip.t_no_sub+" "+oneTrip.t_memo
+                                tripCityIndex = 0
+
+                                for(var j = 0; j < 2; j++) {
+                                    if (j == 0) {
+                                        tripCity = start
+                                    } else if (j == 1) {
+                                        tripCity = end
+                                    }
+                                    findTripPos(tripCity)
+                                }
+                            }
+                            tripIndex++
+                        }, 100)
+                }
+            }
+        }
+        xhrTrip.send()
+    }
+</script>
