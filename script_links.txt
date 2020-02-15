@@ -10,7 +10,7 @@ guizhou.csv, http://www.gzhfpc.gov.cn/
 hainan.csv, http://wst.hainan.gov.cn/swjw/rdzt/yqfk/
 hebei.csv, http://wsjkw.hebei.gov.cn/
 heilongjiang.csv *******
-henan.csv, http://www.hnwsjsw.gov.cn/channels/854.shtml
+henan.csv, http://www.hnwsjsw.gov.cn/Template/fangkong.shtml
 hubei.csv, http://wjw.hubei.gov.cn/
 hunan.csv, http://wjw.hunan.gov.cn
 jiangsu.csv, http://wjw.jiangsu.gov.cn
